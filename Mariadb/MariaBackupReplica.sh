@@ -5,10 +5,10 @@
 set -euo pipefail
 
 ### CONFIGURACIÓN ###
-BACKUP_DIR="/home/backup/mariabackup_raw"
-PREPARED_DIR="/home/backup/mariabackup_prepared"
-FINAL_DIR="/home/backup/mariabackup_final"
-NAS_DIR="/mnt/nas"
+BACKUP_DIR="/backup/mariabackup_raw"
+PREPARED_DIR="/backup/mariabackup_prepared"
+FINAL_DIR="/backup/mariabackup_final"
+#NAS_DIR="/mnt/nas"
 LOGDIR="$(dirname $0)/LOGs"
 MYSQL_USER="backup"
 MYSQL_PASS="PASSWORD"
@@ -57,14 +57,9 @@ echo "[OK] Backup físico completado."
 echo "[*] Preparando backup (apply-log)..."
 
 rm -rf "$PREPARED_DIR"/*
-### Preparar el backup directamente en el directorio de backup (más eficiente)
-mariabackup --prepare --target-dir="$BACKUP_DIR"
+cp -R "$BACKUP_DIR" "$PREPARED_DIR"
 
-# Mover los archivos preparados al directorio preparado (evita copiar)
-rm -rf "${PREPARED_DIR:?}"/*
-mv "$BACKUP_DIR"/* "$PREPARED_DIR"/ || true
-
-echo "[INFO] Backup preparado en $PREPARED_DIR"
+mariabackup --prepare --target-dir="$PREPARED_DIR"
 
 echo "[OK] Backup preparado."
 
@@ -78,12 +73,6 @@ tar -czf "$FINAL_TAR" -C "$PREPARED_DIR" .
 
 echo "[OK] Backup comprimido: $FINAL_TAR"
 
-### 5️⃣ COPIAR AL NAS ###
-echo "[*] Copiando backup al NAS..."
-
-cp -a "$FINAL_TAR" "$NAS_DIR/"
-
-echo "[OK] Copia al NAS completada."
 
 ### 6️⃣ MOSTRAR POSICIÓN BINLOG / GTID ###
 echo "[*] Info del binlog al momento del backup:"
